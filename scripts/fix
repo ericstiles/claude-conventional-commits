@@ -1,0 +1,13 @@
+#!/bin/bash
+if [[ $# -eq 0 ]]; then
+    echo "Usage: fix \"<example1>\" ..."
+    echo "Examples:"
+    echo "  fix \"resolve login bug\""
+    echo "  fix \"update error handling\""
+    exit 1
+fi
+SCRIPT_DIR=$(dirname "$(realpath "${BASH_SOURCE[0]}")")
+echo "Checking git staging status..."
+"$SCRIPT_DIR/check-staged" || { echo "Staging check failed. Aborting commit."; exit 1; }
+echo "Staging check passed. Proceeding with commit..."
+exec "$SCRIPT_DIR/cc" fix "$@"

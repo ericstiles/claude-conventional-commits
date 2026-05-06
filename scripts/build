@@ -1,0 +1,13 @@
+#!/bin/bash
+if [[ $# -eq 0 ]]; then
+    echo "Usage: build \"update Maven configuration\" ..."
+    echo "Examples:"
+    echo "  build \"update Maven configuration\""
+    echo "  build \"add new build profile\""
+    exit 1
+fi
+script_dir=$(dirname "$(realpath "$BASH_SOURCE[0]")")
+echo "Checking git staging status..."
+"$SCRIPT_DIR/check-staged" || { echo "Staging check failed. Aborting commit."; exit 1; }
+echo "Staging check passed. Proceeding with commit..."
+exec "$script_dir/cc" build "$@"

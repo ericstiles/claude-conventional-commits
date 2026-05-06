@@ -1,0 +1,52 @@
+#!/bin/bash
+valid_types="build chore ci docs feat fix perf refactor revert style test"
+
+lookup_author() {
+    local key="$1"
+    if [[ ${#key} -ne 2 ]]; then
+        echo "$key"
+        return
+    fi
+    if [[ ! -f ~/.git-authors ]]; then
+        echo "$key"
+        return
+    fi
+    local author_line
+    author_line=$(grep "^  ${key}:" ~/.git-authors)
+    local domain
+    domain=$(grep "^  domain:" ~/.git-authors | awk '{print $2}')
+    if [[ -n "$author_line" && -n "$domain" ]]; then
+        local name
+        name=$(echo "$author_line" | sed "s/^  ${key}: //" | cut -d';' -f1 | xargs)
+        local username
+        username=$(echo "$author_line" | sed "s/^  ${key}: //" | cut -d';' -f2 | xargs)
+        echo "Co-authored-by: ${name} <${username}@${domain}>"
+    else
+        echo "$key"
+    fi
+}
+
+if [[ $# -lt 2 ]]; then
+    echo "Usage: cc <type> <message> [<message2> ...]"
+    echo "Valid types: $valid_types"
+    exit 1
+fi
+
+commit_type="$1"; shift
+
+if ! echo "$valid_types" | grep -q "\b${commit_type}\b"; then
+    echo "Error: Invalid commit type '${commit_type}'"
+    echo "Valid types: $valid_types"
+    exit 1
+fi
+
+first_msg=$(lookup_author "$1"); shift
+cmd="git commit -m \"${commit_type}: ${first_msg}\""
+
+for arg in "$@"; do
+    processed=$(lookup_author "$arg")
+    cmd+=" -m \"${processed}\""
+done
+
+echo "$cmd"
+eval "$cmd"
